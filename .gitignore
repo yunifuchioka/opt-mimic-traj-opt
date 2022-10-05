@@ -1,0 +1,8 @@
+# python cache files
+**/__pycache__/
+
+# saved videos
+**/videos/
+
+# vscode configs
+**/.vscode
