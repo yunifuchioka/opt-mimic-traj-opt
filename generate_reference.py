@@ -38,7 +38,7 @@ def sinusoid(period, min_val, max_val, t, phase_offset=0):
 
 
 def generate_reference():
-    motion_type = "biped-step"
+    motion_type = "180-backflip"
 
     if motion_type == "stand":
         tf = 10.0
@@ -458,8 +458,8 @@ def generate_reference():
         for leg in legs:
             f_i[leg] = np.array([0.0, 0.0, 0.0])
             if p_i[leg][2] <= eps:
-                # f_i[leg][2] = m * np.linalg.norm(g) / 4.0
-                f_i[leg][2] = m * np.linalg.norm(g) # for biped-step
+                f_i[leg][2] = m * np.linalg.norm(g) / 4.0
+                # f_i[leg][2] = m * np.linalg.norm(g) # for biped-step
         X[:, k], U[:, k] = flatten_state_np(p, R, pdot, omega, p_i, f_i)
 
     return X, U, dt, motion_options

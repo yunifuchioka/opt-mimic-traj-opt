@@ -99,23 +99,24 @@ def traj_opt(X_ref, U_ref, dt, motion_options={}):
             f += f_i[leg]
             tau += ca.cross(p_i[leg] - p, f_i[leg])
         if k != N:
-            # opti.subject_to(p_next == p + pdot * dt)
-            # opti.subject_to(pdot_next == pdot + (f / m + g) * dt)
-            # opti.subject_to(R_next == R @ rot_mat_ca(omega, dt))
-            # opti.subject_to(
-            #     omega_next
-            #     == omega + B_I_inv @ (R.T @ tau - skew_ca(omega) @ B_I @ omega) * dt
-            # )
-
-            # 2D dynamics constrainted to x-z plane
-            opti.subject_to(p_next[::2] == p[::2] + pdot[::2] * dt)
-            opti.subject_to(pdot_next[::2] == pdot[::2] + (f[::2] / m + g[::2]) * dt)
+            # 3D dynamics
+            opti.subject_to(p_next == p + pdot * dt)
+            opti.subject_to(pdot_next == pdot + (f / m + g) * dt)
             opti.subject_to(R_next == R @ rot_mat_ca(omega, dt))
-            opti.subject_to(omega_next[1] == omega[1] + B_I_inv[1, 1] * tau[1] * dt)
-            opti.subject_to(opti.bounded(-eps, p[1], eps))
-            opti.subject_to(opti.bounded(-eps, pdot[1], eps))
-            opti.subject_to(opti.bounded(-eps, omega[0], eps))
-            opti.subject_to(opti.bounded(-eps, omega[2], eps))
+            opti.subject_to(
+                omega_next
+                == omega + B_I_inv @ (R.T @ tau - skew_ca(omega) @ B_I @ omega) * dt
+            )
+
+            # # 2D dynamics constrainted to x-z plane
+            # opti.subject_to(p_next[::2] == p[::2] + pdot[::2] * dt)
+            # opti.subject_to(pdot_next[::2] == pdot[::2] + (f[::2] / m + g[::2]) * dt)
+            # opti.subject_to(R_next == R @ rot_mat_ca(omega, dt))
+            # opti.subject_to(omega_next[1] == omega[1] + B_I_inv[1, 1] * tau[1] * dt)
+            # opti.subject_to(opti.bounded(-eps, p[1], eps))
+            # opti.subject_to(opti.bounded(-eps, pdot[1], eps))
+            # opti.subject_to(opti.bounded(-eps, omega[0], eps))
+            # opti.subject_to(opti.bounded(-eps, omega[2], eps))
 
         # kinematics constraints
         for leg in legs:
@@ -218,22 +219,22 @@ def traj_opt(X_ref, U_ref, dt, motion_options={}):
     opti.subject_to(R_init == R_ref_init)
     for leg in legs:
         opti.subject_to(p_i_init[leg] == p_i_ref_init[leg])
-    # # turn off below for cyclic constraint
-    # opti.subject_to(pdot_init == np.zeros_like(pdot_ref_init))
-    # opti.subject_to(omega_init == np.zeros_like(omega_ref_init))
-    # # note: no initial condition on force
+    # # turn off below for cyclic constraint (biped step)
+    opti.subject_to(pdot_init == np.zeros_like(pdot_ref_init))
+    opti.subject_to(omega_init == np.zeros_like(omega_ref_init))
+    # note: no initial condition on force
 
-    # cyclic constraint
-    p_final, R_final, pdot_final, omega_final, p_i_final, f_i_final = extract_state_ca(
-        X, U, N
-    )
-    opti.subject_to(ca.sumsqr(p_init - p_final) < eps)
-    opti.subject_to(ca.sumsqr(R_init - R_final) < eps)
-    for leg in legs:
-        opti.subject_to(ca.sumsqr(p_i_init[leg] - p_i_final[leg]) < eps)
-        opti.subject_to(ca.sumsqr(f_i_init[leg] - f_i_final[leg]) < eps)
-    opti.subject_to(ca.sumsqr(pdot_init - pdot_final) < eps)
-    opti.subject_to(ca.sumsqr(omega_init - omega_final) < eps)
+    # # cyclic constraint (for biped-step)
+    # p_final, R_final, pdot_final, omega_final, p_i_final, f_i_final = extract_state_ca(
+    #     X, U, N
+    # )
+    # opti.subject_to(ca.sumsqr(p_init - p_final) < eps)
+    # opti.subject_to(ca.sumsqr(R_init - R_final) < eps)
+    # for leg in legs:
+    #     opti.subject_to(ca.sumsqr(p_i_init[leg] - p_i_final[leg]) < eps)
+    #     opti.subject_to(ca.sumsqr(f_i_init[leg] - f_i_final[leg]) < eps)
+    # opti.subject_to(ca.sumsqr(pdot_init - pdot_final) < eps)
+    # opti.subject_to(ca.sumsqr(omega_init - omega_final) < eps)
 
     # initial solution guess
     opti.set_initial(X, X_ref)
